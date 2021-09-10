@@ -33,6 +33,7 @@ import org.apache.kafka.connect.data.Date;
 import org.apache.kafka.connect.data.Decimal;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Schema.Type;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Time;
 import org.apache.kafka.connect.data.Timestamp;
 
@@ -42,6 +43,7 @@ import java.util.List;
 
 import io.confluent.connect.jdbc.dialect.DatabaseDialectProvider.SubprotocolBasedProvider;
 import io.confluent.connect.jdbc.sink.metadata.SinkRecordField;
+import io.confluent.connect.jdbc.source.ColumnMapping;
 import io.confluent.connect.jdbc.util.ColumnId;
 import io.confluent.connect.jdbc.util.ExpressionBuilder;
 import io.confluent.connect.jdbc.util.ExpressionBuilder.Transform;
@@ -312,4 +314,42 @@ public class OracleDatabaseDialect extends GenericDatabaseDialect {
                 .replaceAll("(:thin:[^/]*)/([^@]*)@", "$1/****@")
                 .replaceAll("(:oci[^:]*:[^/]*)/([^@]*)@", "$1/****@");
   }
+  
+	@Override
+	protected String addFieldToSchema(
+	    ColumnDefinition columnDefn,
+	    SchemaBuilder builder,
+	    String fieldName,
+	    int sqlType,
+		boolean optional) {
+		// Handle Oracle specific types first
+	  switch (sqlType) {
+	    case 100:
+			// Use the same schema definition as a standard Float
+		  return super.addFieldToSchema(columnDefn, builder, fieldName, Types.FLOAT, optional);
+	    case 101:
+			// Use the same schema definition as a standard Double
+		  return super.addFieldToSchema(columnDefn, builder, fieldName, Types.DOUBLE, optional);
+	    default:
+		      break;	      
+      }
+		// Delegate for the remaining logic to handle the standard types
+	  return super.addFieldToSchema(columnDefn, builder, fieldName, sqlType, optional);
+	}
+
+	protected ColumnConverter columnConverterFor(
+	    final ColumnMapping mapping,
+	    final ColumnDefinition defn,
+		final int col,
+		final boolean isJdbc4) {
+	  switch (defn.type()) {
+	    case 100:
+		  return rs -> rs.getFloat(col);
+	    case 101:
+	      return rs -> rs.getDouble(col);
+	    default:
+	      break;	      
+	  }
+	  return super.columnConverterFor(mapping, defn, col, isJdbc4);
+	}  
 }
