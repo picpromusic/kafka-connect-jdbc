@@ -1070,10 +1070,10 @@ public class GenericDatabaseDialect implements DatabaseDialect {
         } else if (mapNumerics == NumericMapping.BEST_FIT) {
           glog.debug("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (precision <= MAX_INTEGER_TYPE_PRECISION) { // fits in primitive data types.
-            if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
+            if (scale != NUMERIC_TYPE_SCALE_UNSET && scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               builder.field(fieldName, integerSchema(optional, precision));
               break;
-            } else if (scale > 0) { // floating point - use double in all cases
+            } else if (scale == NUMERIC_TYPE_SCALE_UNSET || scale > 0) { // floating point - use double in all cases
               Schema schema = (optional) ? Schema.OPTIONAL_FLOAT64_SCHEMA : Schema.FLOAT64_SCHEMA;
               builder.field(fieldName, schema);
               break;
@@ -1081,12 +1081,12 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           }
         } else if (mapNumerics == NumericMapping.BEST_FIT_EAGER_DOUBLE) {
           glog.debug("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
-          if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
+          if (scale != NUMERIC_TYPE_SCALE_UNSET && scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
             if (precision <= MAX_INTEGER_TYPE_PRECISION) { // fits in primitive data types.
               builder.field(fieldName, integerSchema(optional, precision));
               break;
             }
-          } else if (scale > 0) { // floating point - use double in all cases
+          } else if (scale == NUMERIC_TYPE_SCALE_UNSET || scale > 0) { // floating point - use double in all cases
             Schema schema = (optional) ? Schema.OPTIONAL_FLOAT64_SCHEMA : Schema.FLOAT64_SCHEMA;
             builder.field(fieldName, schema);
             break;
@@ -1310,7 +1310,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           int scale = defn.scale();
           glog.trace("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
           if (precision <= MAX_INTEGER_TYPE_PRECISION) { // fits in primitive data types.
-            if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
+            if (scale != NUMERIC_TYPE_SCALE_UNSET && scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
               if (precision > 9) {
                 return rs -> rs.getLong(col);
               } else if (precision > 4) {
@@ -1320,7 +1320,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
               } else {
                 return rs -> rs.getByte(col);
               }
-            } else if (scale > 0) { // floating point - use double in all cases
+            } else if (scale == NUMERIC_TYPE_SCALE_UNSET || scale > 0) { // floating point - use double in all cases
               return rs -> rs.getDouble(col);
             }
           }
@@ -1328,7 +1328,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
           int precision = defn.precision();
           int scale = defn.scale();
           glog.trace("NUMERIC with precision: '{}' and scale: '{}'", precision, scale);
-          if (scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
+          if (scale != NUMERIC_TYPE_SCALE_UNSET && scale < 1 && scale >= NUMERIC_TYPE_SCALE_LOW) { // integer
             if (precision <= MAX_INTEGER_TYPE_PRECISION) { // fits in primitive data types.
               if (precision > 9) {
                 return rs -> rs.getLong(col);
@@ -1340,7 +1340,7 @@ public class GenericDatabaseDialect implements DatabaseDialect {
                 return rs -> rs.getByte(col);
               }
             }
-          } else if (scale > 0) { // floating point - use double in all cases
+          } else if (scale == NUMERIC_TYPE_SCALE_UNSET || scale > 0) { // floating point - use double in all cases
             return rs -> rs.getDouble(col);
           }
         }
